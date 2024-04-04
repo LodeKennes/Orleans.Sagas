@@ -2,9 +2,9 @@ name: .NET Core
 
 on:
   push:
-    branches: [ master ]
+    branches: [ TemporaryNuget ]
   pull_request:	
-    branches: [ master ]
+    branches: [ TemporaryNuget ]
 
 jobs:
   build:
@@ -23,9 +23,9 @@ jobs:
       run: dotnet build --configuration Release --no-restore
     - name: Test
       run: dotnet test --no-restore --verbosity normal
-    - name: Publish NuGet
-      uses: brandedoutcast/publish-nuget@v2.5.2
-      with:
-        PROJECT_FILE_PATH: "Orleans.Sagas/Orleans.Sagas.csproj"
-        NUGET_KEY: ${{secrets.NUGET_KEY}}
-      if: github.event_name != 'pull_request'
+    - name: Pack
+      run: dotnet pack -o ./output ./Orleans.Sagas
+    - name: Add nuget registry
+      run: dotnet nuget add source --username LodeKennes --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/NAMESPACE/index.json"
+    - name: Push
+      run: dotnet nuget push ./output/*.nupkg --source github
